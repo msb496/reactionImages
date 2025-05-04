@@ -35,10 +35,10 @@
             const imageDataURL = canvas.toDataURL("image/png");
             const imageBase64 = imageDataURL.split(",")[1];
 
-            const githubUsername = "your-username";
-            const repoName = "your-repo";
+            const githubUsername = "msb496";
+            const repoName = "reactionImages";
             const path = "images/captured-image.png";
-            const githubToken = "your-personal-access-token";
+            const githubToken = "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";
 
             const uploadURL = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${path}`;
 
