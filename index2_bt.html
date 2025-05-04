@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Photo via Bluetooth</title>
+</head>
+<body>
+    <h2>Capture & Send Photo</h2>
+    <video id="video" autoplay></video>
+    <button id="snap">Capture & Send</button>
+    <button id="scan">Scan Bluetooth Devices</button>
+    
+    <canvas id="canvas" style="display:none"></canvas>
+    <div id="devices"></div>
+
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const snapBtn = document.getElementById("snap");
+        const scanBtn = document.getElementById("scan");
+        const devicesDiv = document.getElementById("devices");
+
+        // Start camera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => video.srcObject = stream)
+            .catch(console.error);
+
+        snapBtn.addEventListener("click", () => {
+            const context = canvas.getContext("2d");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL("image/png").split(',')[1];
+
+            // Send to Flask server
+            fetch("http://localhost:5000/upload", {
+                method: "POST",
+                body: JSON.stringify({ image: imageData }),
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => alert("Photo sent: " + data.filename))
+            .catch(console.error);
+        });
+
+        // Scan Bluetooth Devices
+        scanBtn.addEventListener("click", () => {
+            fetch("http://localhost:5000/scan-bluetooth")
+                .then(response => response.json())
+                .then(devices => {
+                    devicesDiv.innerHTML = "<h3>Bluetooth Devices</h3>" + devices.map(d => 
+                        `<button onclick="sendViaBluetooth('${d.address}')">${d.name}</button>`
+                    ).join("");
+                })
+                .catch(console.error);
+        });
+
+        function sendViaBluetooth(address) {
+            fetch("http://localhost:5000/receive-bluetooth", {
+                method: "POST",
+                body: JSON.stringify({ device_address: address }),
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(console.error);
+        }
+    </script>
+</body>
+</html>
